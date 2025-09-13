@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	err "github.com/busnosh/go-utils/pkg/error"
+	apperr "github.com/busnosh/go-utils/pkg/error"
 	"github.com/busnosh/go-utils/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
@@ -21,7 +21,7 @@ func ErrorHandler() gin.HandlerFunc {
 			message := "Internal Server Error"
 
 			// If it's an AppError, use its code & message
-			if appErr, ok := lastErr.(*err.Error); ok {
+			if appErr, ok := lastErr.(*apperr.Error); ok {
 				status = appErr.Code
 				message = appErr.Message
 			}

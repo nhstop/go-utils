@@ -1,4 +1,4 @@
-package err
+package apperr
 
 import (
 	"database/sql"
