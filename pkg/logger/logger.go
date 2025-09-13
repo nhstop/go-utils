@@ -24,3 +24,8 @@ func Debug(format string, v ...interface{}) { debugLogger.Printf(format, v...) }
 func Info(format string, v ...interface{})  { infoLogger.Printf(format, v...) }
 func Warn(format string, v ...interface{})  { warnLogger.Printf(format, v...) }
 func Error(format string, v ...interface{}) { errorLogger.Printf(format, v...) }
+
+func Fatal(format string, v ...interface{}) {
+	Error(format, v...)
+	os.Exit(1)
+}
