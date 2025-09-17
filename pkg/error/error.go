@@ -37,7 +37,7 @@ type ErrorParams struct {
 func NewError(params ErrorParams) *CodedError {
 	e := &CodedError{
 		HTTPCode: http.StatusInternalServerError,
-		Code:     constants.InternalServer,
+		Code:     constants.Empty,
 		Message:  "internal server error",
 		Err:      nil,
 	}
