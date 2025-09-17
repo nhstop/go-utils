@@ -35,12 +35,12 @@ func ErrorHandler() gin.HandlerFunc {
 			} else if status >= 500 {
 				statusColor = constants.ColorRed
 			}
-
-			logger.Error("%sRequest %s %s -> %s%d%s | Error: %s%v%s",
+			logger.Error("%sRequest %s %s -> %s%d%s | Code: %s%d%s | Error: %s%v%s",
 				constants.ColorBlue,
 				c.Request.Method,
 				c.Request.URL.Path,
 				statusColor, status, constants.ColorReset,
+				constants.ColorYellow, code, constants.ColorReset,
 				constants.ColorRed, lastErr, constants.ColorReset,
 			)
 
@@ -50,6 +50,7 @@ func ErrorHandler() gin.HandlerFunc {
 				"message": message,
 				"code":    code,
 			})
+
 		}
 	}
 }
