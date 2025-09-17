@@ -17,26 +17,41 @@ import (
 // Error wraps an error with an HTTP status, application code, and message
 type Error struct {
 	HTTPCode int    `json:"-"`
-	Code     int    `json:"code"`
+	AppCode  int    `json:"code"`
 	Message  string `json:"message"`
 	Err      error  `json:"-"`
 }
 
 func (e *Error) Error() string {
 	if e.Err != nil {
-		return fmt.Sprintf("%s (code: %d) -> %v", e.Message, e.Code, e.Err)
+		return fmt.Sprintf("%s (code: %d) -> %v", e.Message, e.AppCode, e.Err)
 	}
-	return fmt.Sprintf("%s (code: %d)", e.Message, e.Code)
+	return fmt.Sprintf("%s (code: %d)", e.Message, e.AppCode)
 }
 
-// NewError creates a new application error
-func NewError(httpCode, appCode int, message string, err error) *Error {
-	return &Error{
-		HTTPCode: httpCode,
-		Code:     appCode,
-		Message:  message,
-		Err:      err,
+// NewError creates a new Error from params
+func NewError(params Error) *Error {
+	e := &Error{
+		HTTPCode: http.StatusInternalServerError,
+		AppCode:  constants.ErrCodeInternalServer,
+		Message:  "internal server error",
+		Err:      nil,
 	}
+
+	if params.HTTPCode != 0 {
+		e.HTTPCode = params.HTTPCode
+	}
+	if params.AppCode != 0 {
+		e.AppCode = params.AppCode
+	}
+	if params.Message != "" {
+		e.Message = params.Message
+	}
+	if params.Err != nil {
+		e.Err = params.Err
+	}
+
+	return e
 }
 
 // -------------------------
@@ -47,12 +62,12 @@ func NewError(httpCode, appCode int, message string, err error) *Error {
 func BadRequest(ctx *gin.Context, err error) {
 	// Case 1: Empty body
 	if errors.Is(err, io.EOF) {
-		ctx.Error(NewError(
-			http.StatusBadRequest,
-			constants.ErrCodeInvalidRequest,
-			"request body is required but was empty",
-			err,
-		))
+		ctx.Error(NewError(Error{
+			HTTPCode: http.StatusBadRequest,
+			AppCode:  constants.ErrCodeInvalidRequest,
+			Message:  "request body is required but was empty",
+			Err:      err,
+		}))
 		return
 	}
 
@@ -80,22 +95,22 @@ func BadRequest(ctx *gin.Context, err error) {
 			errorsMap[strings.ToLower(fieldErr.Field())] = msg
 		}
 
-		ctx.Error(NewError(
-			http.StatusBadRequest,
-			constants.ErrCodeInvalidRequest,
-			formatValidationErrors(errorsMap),
-			err,
-		))
+		ctx.Error(NewError(Error{
+			HTTPCode: http.StatusBadRequest,
+			AppCode:  constants.ErrCodeInvalidRequest,
+			Message:  formatValidationErrors(errorsMap),
+			Err:      err,
+		}))
 		return
 	}
 
 	// Case 3: Other JSON/binding errors
-	ctx.Error(NewError(
-		http.StatusBadRequest,
-		constants.ErrCodeInvalidRequest,
-		"invalid request body",
-		err,
-	))
+	ctx.Error(NewError(Error{
+		HTTPCode: http.StatusBadRequest,
+		AppCode:  constants.ErrCodeInvalidRequest,
+		Message:  "invalid request body",
+		Err:      err,
+	}))
 }
 
 // Helper to convert validation errors map to string
@@ -114,34 +129,33 @@ func InternalServerError(ctx *gin.Context, err error) {
 		msg = err.Error()
 	}
 
-	ctx.Error(NewError(
-		http.StatusInternalServerError,
-		constants.ErrCodeInternalServer,
-		msg,
-		err,
-	))
+	ctx.Error(NewError(Error{
+		HTTPCode: http.StatusInternalServerError,
+		AppCode:  constants.ErrCodeInternalServer,
+		Message:  msg,
+		Err:      err,
+	}))
 }
 
 // NotFound handles 404 - Not Found
 func NotFound(ctx *gin.Context, msg string) {
-	ctx.Error(NewError(
-		http.StatusNotFound,
-		constants.ErrCodeUserNotFound,
-		msg,
-		nil,
-	))
+	ctx.Error(NewError(Error{
+		HTTPCode: http.StatusNotFound,
+		AppCode:  constants.ErrCodeUserNotFound,
+		Message:  msg,
+	}))
 }
 
 // PostgresError maps pg errors into AppError with proper codes
 func PostgresError(ctx *gin.Context, err error) {
 	// Handle sql.ErrNoRows
 	if errors.Is(err, sql.ErrNoRows) {
-		ctx.Error(NewError(
-			http.StatusNotFound,
-			constants.ErrCodeUserNotFound,
-			"resource not found",
-			err,
-		))
+		ctx.Error(NewError(Error{
+			HTTPCode: http.StatusNotFound,
+			AppCode:  constants.ErrCodeUserNotFound,
+			Message:  "resource not found",
+			Err:      err,
+		}))
 		return
 	}
 
@@ -149,15 +163,40 @@ func PostgresError(ctx *gin.Context, err error) {
 	if errors.As(err, &pgErr) {
 		switch pgErr.Code {
 		case "23505": // unique_violation
-			ctx.Error(NewError(http.StatusConflict, constants.ErrCodeUserAlreadyExists, "resource already exists", err))
+			ctx.Error(NewError(Error{
+				HTTPCode: http.StatusConflict,
+				AppCode:  constants.ErrCodeUserAlreadyExists,
+				Message:  "resource already exists",
+				Err:      err,
+			}))
 		case "23503": // foreign_key_violation
-			ctx.Error(NewError(http.StatusBadRequest, constants.ErrCodeInvalidRequest, "invalid reference, foreign key constraint failed", err))
+			ctx.Error(NewError(Error{
+				HTTPCode: http.StatusBadRequest,
+				AppCode:  constants.ErrCodeInvalidRequest,
+				Message:  "invalid reference, foreign key constraint failed",
+				Err:      err,
+			}))
 		case "23502": // not_null_violation
-			ctx.Error(NewError(http.StatusBadRequest, constants.ErrCodeInvalidRequest, "required field missing", err))
+			ctx.Error(NewError(Error{
+				HTTPCode: http.StatusBadRequest,
+				AppCode:  constants.ErrCodeInvalidRequest,
+				Message:  "required field missing",
+				Err:      err,
+			}))
 		case "23514": // check_violation
-			ctx.Error(NewError(http.StatusBadRequest, constants.ErrCodeInvalidRequest, "check constraint failed", err))
+			ctx.Error(NewError(Error{
+				HTTPCode: http.StatusBadRequest,
+				AppCode:  constants.ErrCodeInvalidRequest,
+				Message:  "check constraint failed",
+				Err:      err,
+			}))
 		default:
-			ctx.Error(NewError(http.StatusInternalServerError, constants.ErrCodeInternalServer, "database error", err))
+			ctx.Error(NewError(Error{
+				HTTPCode: http.StatusInternalServerError,
+				AppCode:  constants.ErrCodeInternalServer,
+				Message:  "database error",
+				Err:      err,
+			}))
 		}
 		return
 	}

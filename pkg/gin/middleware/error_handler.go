@@ -26,7 +26,7 @@ func ErrorHandler() gin.HandlerFunc {
 			if appErr, ok := lastErr.(*apperr.Error); ok {
 				status = appErr.HTTPCode // ✅ use HTTPCode
 				message = appErr.Message
-				code = appErr.Code
+				code = appErr.AppCode
 			}
 
 			statusColor := constants.ColorGreen
