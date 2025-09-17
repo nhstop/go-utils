@@ -56,8 +56,8 @@ func PostgresError(err error) *CodedError {
 		default:
 			return NewError(ErrorParams{
 				HTTPCode: http.StatusInternalServerError,
-				Code:     constants.InternalServer,
-				Message:  "database error",
+				Code:     constants.DBError,
+				Message:  "Application  error",
 				Err:      err,
 			})
 		}

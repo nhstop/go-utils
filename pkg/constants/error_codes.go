@@ -18,10 +18,7 @@ const (
 	FailedToGetAESKey = 2005
 
 	// Database
-	CreateUserFailed = 3000
-	UpdateUserFailed = 3001
-	DeleteUserFailed = 3002
-	FetchUserFailed  = 3003
+	DBError = 3000
 
 	// Business Logic
 	InvalidCredentials = 4000
