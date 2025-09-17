@@ -17,7 +17,7 @@ func BadRequest(err error) *CodedError {
 	if errors.Is(err, io.EOF) {
 		return NewError(ErrorParams{
 			HTTPCode: http.StatusBadRequest,
-			Code:     constants.ErrCodeInvalidRequest,
+			Code:     constants.InvalidRequest,
 			Message:  "request body is required but was empty",
 			Err:      err,
 		})
@@ -50,7 +50,7 @@ func BadRequest(err error) *CodedError {
 
 		return NewError(ErrorParams{
 			HTTPCode: http.StatusBadRequest,
-			Code:     constants.ErrCodeInvalidRequest,
+			Code:     constants.InvalidRequest,
 			Message:  formatValidationErrors(errorsMap),
 			Err:      err,
 		})
@@ -60,7 +60,7 @@ func BadRequest(err error) *CodedError {
 	// Case 3: Other JSON/binding errors
 	return NewError(ErrorParams{
 		HTTPCode: http.StatusBadRequest,
-		Code:     constants.ErrCodeInvalidRequest,
+		Code:     constants.InvalidRequest,
 		Message:  "invalid request body",
 		Err:      err,
 	})

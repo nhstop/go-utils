@@ -23,7 +23,7 @@ func ErrorHandler() gin.HandlerFunc {
 		// Default response
 		status := http.StatusInternalServerError
 		message := "Internal Server Error"
-		code := constants.ErrCodeInternalServer
+		code := constants.InternalServer
 
 		// If it's a CodedError, use its HTTPCode, Message, and Code
 		if codedErr, ok := lastErr.(*apperr.CodedError); ok {

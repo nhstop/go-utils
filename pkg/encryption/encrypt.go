@@ -7,13 +7,15 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/busnosh/go-utils/pkg/constants"
+	apperr "github.com/busnosh/go-utils/pkg/error"
 	"github.com/busnosh/go-utils/pkg/utils"
 )
 
 func getAESKey(secretKey string) ([]byte, error) {
 	key := utils.GetEnv(secretKey, "ENCRYPT_SECRET")
 	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
-		return nil, fmt.Errorf("ENCRYPT_SECRET must be 16, 24, or 32 bytes")
+		return nil, apperr.NewError(apperr.ErrorParams{Code: constants.FailedToGetAESKey, Message: "ENCRYPT_SECRET must be 16, 24, or 32 bytes"})
 	}
 	return []byte(key), nil
 }

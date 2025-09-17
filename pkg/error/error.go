@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/busnosh/go-utils/pkg/constants"
-	"github.com/gin-gonic/gin"
 )
 
 // -------------------------
@@ -38,7 +37,7 @@ type ErrorParams struct {
 func NewError(params ErrorParams) *CodedError {
 	e := &CodedError{
 		HTTPCode: http.StatusInternalServerError,
-		Code:     constants.ErrCodeInternalServer,
+		Code:     constants.InternalServer,
 		Message:  "internal server error",
 		Err:      nil,
 	}
@@ -66,25 +65,25 @@ func NewError(params ErrorParams) *CodedError {
 // Helper to format validation errors map
 
 // InternalServerError handles 500 errors
-func InternalServerError(ctx *gin.Context, err error) {
+func InternalServerError(err error) {
 	msg := "internal server error"
 	if err != nil && err.Error() != "" {
 		msg = err.Error()
 	}
 
-	ctx.Error(NewError(ErrorParams{
+	NewError(ErrorParams{
 		HTTPCode: http.StatusInternalServerError,
-		Code:     constants.ErrCodeInternalServer,
+		Code:     constants.InternalServer,
 		Message:  msg,
 		Err:      err,
-	}))
+	})
 }
 
 // NotFound handles 404 errors
-func NotFound(ctx *gin.Context, msg string) {
-	ctx.Error(NewError(ErrorParams{
+func NotFound(msg string) {
+	NewError(ErrorParams{
 		HTTPCode: http.StatusNotFound,
-		Code:     constants.ErrCodeUserNotFound,
+		Code:     constants.UserNotFound,
 		Message:  msg,
-	}))
+	})
 }
