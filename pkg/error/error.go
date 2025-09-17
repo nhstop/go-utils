@@ -3,6 +3,7 @@ package apperr
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -37,33 +38,56 @@ func NewError(code int, message string, err error) *Error {
 // -------------------------
 // Error Handlers
 // -------------------------
-
-// BadRequest handles 400 - Bad Request
+// BadRequest handles 400 - Bad Request consistently.
 func BadRequest(ctx *gin.Context, err error) {
 	// Case 1: Empty body
 	if errors.Is(err, io.EOF) {
-		ctx.Error(NewError(http.StatusBadRequest, "request body is required but was empty", err))
+		ctx.Error(NewError(
+			http.StatusBadRequest,
+			"request body is required but was empty",
+			err,
+		))
 		return
 	}
 
 	// Case 2: Validation errors
-	if validationErrs, ok := err.(validator.ValidationErrors); ok {
+	var validationErrs validator.ValidationErrors
+	if errors.As(err, &validationErrs) {
 		errorsMap := make(map[string]string)
 		for _, fieldErr := range validationErrs {
-			msg := fieldErr.Field() + " failed on '" + fieldErr.Tag() + "'"
-			if fieldErr.Param() != "" {
-				msg += " (param: " + fieldErr.Param() + ")"
+			var msg string
+			switch fieldErr.Tag() {
+			case "required":
+				msg = fmt.Sprintf("%s is required", fieldErr.Field())
+			case "email":
+				msg = fmt.Sprintf("%s must be a valid email", fieldErr.Field())
+			case "min":
+				msg = fmt.Sprintf("%s must be at least %s characters", fieldErr.Field(), fieldErr.Param())
+			case "max":
+				msg = fmt.Sprintf("%s cannot be longer than %s characters", fieldErr.Field(), fieldErr.Param())
+			default:
+				msg = fmt.Sprintf("%s failed on '%s'", fieldErr.Field(), fieldErr.Tag())
+				if fieldErr.Param() != "" {
+					msg += fmt.Sprintf(" (param: %s)", fieldErr.Param())
+				}
 			}
 			errorsMap[fieldErr.Field()] = msg
 		}
 
-		// Attach Error to context, store validation map in Err
-		ctx.Error(NewError(http.StatusBadRequest, formatValidationErrors(errorsMap), err))
+		ctx.Error(NewError(
+			http.StatusBadRequest,
+			formatValidationErrors(errorsMap),
+			err,
+		))
 		return
 	}
 
 	// Case 3: Other JSON/binding errors
-	ctx.Error(NewError(http.StatusBadRequest, "invalid request body", err))
+	ctx.Error(NewError(
+		http.StatusBadRequest,
+		"invalid request body",
+		err,
+	))
 }
 
 // Helper to convert validation errors map to string
