@@ -23,7 +23,7 @@ func ErrorHandler() gin.HandlerFunc {
 		// Default response
 		status := http.StatusInternalServerError
 		message := "Internal Server Error"
-		code := constants.InternalServer
+		code := constants.Empty
 
 		// If it's a CodedError, use its HTTPCode, Message, and Code
 		if codedErr, ok := lastErr.(*apperr.CodedError); ok {
@@ -51,10 +51,16 @@ func ErrorHandler() gin.HandlerFunc {
 		)
 
 		// Respond with structured JSON
-		c.JSON(status, gin.H{
+		resp := gin.H{
 			"success": false,
 			"message": message,
-			"code":    code,
-		})
+		}
+
+		if code != 0 {
+			resp["code"] = code
+		}
+
+		c.JSON(status, resp)
+
 	}
 }

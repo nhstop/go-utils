@@ -2,6 +2,7 @@ package constants
 
 // Error codes (application-wide unique)
 const (
+	Empty = 0
 	// Generic
 	InternalServer = 1000
 	InvalidRequest = 1001
