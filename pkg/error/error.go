@@ -161,12 +161,12 @@ func NotFound(ctx *gin.Context, msg string) {
 func PostgresError(ctx *gin.Context, err error) {
 	// Handle sql.ErrNoRows
 	if errors.Is(err, sql.ErrNoRows) {
-		ctx.Error(NewError(ErrorParams{
+		NewError(ErrorParams{
 			HTTPCode: http.StatusNotFound,
 			Code:     constants.ErrCodeUserNotFound,
 			Message:  "resource not found",
 			Err:      err,
-		}))
+		})
 		return
 	}
 
@@ -174,40 +174,40 @@ func PostgresError(ctx *gin.Context, err error) {
 	if errors.As(err, &pgErr) {
 		switch pgErr.Code {
 		case "23505": // unique_violation
-			ctx.Error(NewError(ErrorParams{
+			NewError(ErrorParams{
 				HTTPCode: http.StatusConflict,
 				Code:     constants.ErrCodeUserAlreadyExists,
 				Message:  "resource already exists",
 				Err:      err,
-			}))
+			})
 		case "23503": // foreign_key_violation
-			ctx.Error(NewError(ErrorParams{
+			NewError(ErrorParams{
 				HTTPCode: http.StatusBadRequest,
 				Code:     constants.ErrCodeInvalidRequest,
 				Message:  "invalid reference, foreign key constraint failed",
 				Err:      err,
-			}))
+			})
 		case "23502": // not_null_violation
-			ctx.Error(NewError(ErrorParams{
+			NewError(ErrorParams{
 				HTTPCode: http.StatusBadRequest,
 				Code:     constants.ErrCodeInvalidRequest,
 				Message:  "required field missing",
 				Err:      err,
-			}))
+			})
 		case "23514": // check_violation
-			ctx.Error(NewError(ErrorParams{
+			NewError(ErrorParams{
 				HTTPCode: http.StatusBadRequest,
 				Code:     constants.ErrCodeInvalidRequest,
 				Message:  "check constraint failed",
 				Err:      err,
-			}))
+			})
 		default:
-			ctx.Error(NewError(ErrorParams{
+			NewError(ErrorParams{
 				HTTPCode: http.StatusInternalServerError,
 				Code:     constants.ErrCodeInternalServer,
 				Message:  "database error",
 				Err:      err,
-			}))
+			})
 		}
 		return
 	}
