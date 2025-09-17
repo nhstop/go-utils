@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/busnosh/go-utils/pkg/constants"
@@ -40,13 +41,17 @@ func ErrorHandler() gin.HandlerFunc {
 			statusColor = constants.ColorRed
 		}
 
-		// Log the error
-		logger.Error("%sRequest %s %s -> %s%d%s | Code: %s%d%s | Error: %s%v%s",
+		logCode := ""
+		if code != 0 {
+			logCode = fmt.Sprintf(" | Code: %s%d%s", constants.ColorYellow, code, constants.ColorReset)
+		}
+
+		logger.Error("%sRequest %s %s -> %s%d%s%s | Error: %s%v%s",
 			constants.ColorBlue,
 			c.Request.Method,
 			c.Request.URL.Path,
 			statusColor, status, constants.ColorReset,
-			constants.ColorYellow, code, constants.ColorReset,
+			logCode,
 			constants.ColorRed, lastErr, constants.ColorReset,
 		)
 
