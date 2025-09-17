@@ -3,16 +3,9 @@ package middleware
 import (
 	"time"
 
+	"github.com/busnosh/go-utils/pkg/constants"
 	"github.com/busnosh/go-utils/pkg/logger"
 	"github.com/gin-gonic/gin"
-)
-
-const (
-	ColorReset  = "\033[0m"
-	ColorRed    = "\033[31m"
-	ColorGreen  = "\033[32m"
-	ColorYellow = "\033[33m"
-	ColorBlue   = "\033[34m"
 )
 
 func RequestLogger() gin.HandlerFunc {
@@ -28,26 +21,18 @@ func RequestLogger() gin.HandlerFunc {
 		path := c.Request.URL.Path
 
 		// Choose status color
-		statusColor := ColorGreen
+		statusColor := constants.ColorGreen
 		switch {
 		case status >= 500:
-			statusColor = ColorRed
+			statusColor = constants.ColorRed
 		case status >= 400:
-			statusColor = ColorYellow
+			statusColor = constants.ColorYellow
 		case status >= 300:
-			statusColor = ColorBlue
-		}
-
-		// Capture errors if any
-		errorMessage := ""
-		if len(c.Errors) > 0 {
-			errorMessage = c.Errors.String()
+			statusColor = constants.ColorBlue
 		}
 
 		// Log the request using your custom logger
-		logger.Info("%s %s | %s%d%s | %v", method, path, statusColor, status, ColorReset, latency)
-		if errorMessage != "" {
-			logger.Error("Error: %s%s%s", statusColor, errorMessage, ColorReset)
-		}
+		logger.Info("%s %s | %s%d%s | %v", method, path, statusColor, status, constants.ColorReset, latency)
+
 	}
 }

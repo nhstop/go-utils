@@ -6,44 +6,50 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
+	"github.com/busnosh/go-utils/pkg/constants"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// Error wraps an error with an HTTP status code and message
+// Error wraps an error with an HTTP status, application code, and message
 type Error struct {
-	Code    int
-	Message string
-	Err     error
+	HTTPCode int    `json:"-"`
+	Code     int    `json:"code"`
+	Message  string `json:"message"`
+	Err      error  `json:"-"`
 }
 
 func (e *Error) Error() string {
 	if e.Err != nil {
-		return e.Err.Error()
+		return fmt.Sprintf("%s (code: %d) -> %v", e.Message, e.Code, e.Err)
 	}
-	return e.Message
+	return fmt.Sprintf("%s (code: %d)", e.Message, e.Code)
 }
 
-// NewError creates a new Error
-func NewError(code int, message string, err error) *Error {
+// NewError creates a new application error
+func NewError(httpCode, appCode int, message string, err error) *Error {
 	return &Error{
-		Code:    code,
-		Message: message,
-		Err:     err,
+		HTTPCode: httpCode,
+		Code:     appCode,
+		Message:  message,
+		Err:      err,
 	}
 }
 
 // -------------------------
 // Error Handlers
 // -------------------------
+
 // BadRequest handles 400 - Bad Request consistently.
 func BadRequest(ctx *gin.Context, err error) {
 	// Case 1: Empty body
 	if errors.Is(err, io.EOF) {
 		ctx.Error(NewError(
 			http.StatusBadRequest,
+			constants.ErrCodeInvalidRequest,
 			"request body is required but was empty",
 			err,
 		))
@@ -58,24 +64,25 @@ func BadRequest(ctx *gin.Context, err error) {
 			var msg string
 			switch fieldErr.Tag() {
 			case "required":
-				msg = fmt.Sprintf("%s is required", fieldErr.Field())
+				msg = fmt.Sprintf("%s is required", strings.ToLower(fieldErr.Field()))
 			case "email":
-				msg = fmt.Sprintf("%s must be a valid email", fieldErr.Field())
+				msg = fmt.Sprintf("%s must be a valid email", strings.ToLower(fieldErr.Field()))
 			case "min":
-				msg = fmt.Sprintf("%s must be at least %s characters", fieldErr.Field(), fieldErr.Param())
+				msg = fmt.Sprintf("%s must be at least %s characters", strings.ToLower(fieldErr.Field()), fieldErr.Param())
 			case "max":
-				msg = fmt.Sprintf("%s cannot be longer than %s characters", fieldErr.Field(), fieldErr.Param())
+				msg = fmt.Sprintf("%s cannot be longer than %s characters", strings.ToLower(fieldErr.Field()), fieldErr.Param())
 			default:
-				msg = fmt.Sprintf("%s failed on '%s'", fieldErr.Field(), fieldErr.Tag())
+				msg = fmt.Sprintf("%s failed on '%s'", strings.ToLower(fieldErr.Field()), fieldErr.Tag())
 				if fieldErr.Param() != "" {
 					msg += fmt.Sprintf(" (param: %s)", fieldErr.Param())
 				}
 			}
-			errorsMap[fieldErr.Field()] = msg
+			errorsMap[strings.ToLower(fieldErr.Field())] = msg
 		}
 
 		ctx.Error(NewError(
 			http.StatusBadRequest,
+			constants.ErrCodeInvalidRequest,
 			formatValidationErrors(errorsMap),
 			err,
 		))
@@ -85,6 +92,7 @@ func BadRequest(ctx *gin.Context, err error) {
 	// Case 3: Other JSON/binding errors
 	ctx.Error(NewError(
 		http.StatusBadRequest,
+		constants.ErrCodeInvalidRequest,
 		"invalid request body",
 		err,
 	))
@@ -92,43 +100,59 @@ func BadRequest(ctx *gin.Context, err error) {
 
 // Helper to convert validation errors map to string
 func formatValidationErrors(errorsMap map[string]string) string {
-	result := ""
+	parts := make([]string, 0, len(errorsMap))
 	for field, msg := range errorsMap {
-		result += field + ": " + msg + "; "
+		parts = append(parts, fmt.Sprintf("%s: %s", field, msg))
 	}
-	return result
+	return strings.Join(parts, "; ")
 }
 
 // InternalServerError handles 500 - Internal Server Error
 func InternalServerError(ctx *gin.Context, err error) {
-	ctx.Error(NewError(http.StatusInternalServerError, err.Error(), err))
+	ctx.Error(NewError(
+		http.StatusInternalServerError,
+		constants.ErrCodeInternalServer,
+		"internal server error",
+		err,
+	))
 }
 
 // NotFound handles 404 - Not Found
 func NotFound(ctx *gin.Context, msg string) {
-	ctx.Error(NewError(http.StatusNotFound, msg, nil))
+	ctx.Error(NewError(
+		http.StatusNotFound,
+		constants.ErrCodeUserNotFound,
+		msg,
+		nil,
+	))
 }
+
+// PostgresError maps pg errors into AppError with proper codes
 func PostgresError(ctx *gin.Context, err error) {
 	// Handle sql.ErrNoRows
 	if errors.Is(err, sql.ErrNoRows) {
-		ctx.Error(NewError(http.StatusNotFound, "Resource not found", err))
+		ctx.Error(NewError(
+			http.StatusNotFound,
+			constants.ErrCodeUserNotFound,
+			"resource not found",
+			err,
+		))
 		return
 	}
 
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
-
 		switch pgErr.Code {
 		case "23505": // unique_violation
-			ctx.Error(NewError(http.StatusConflict, "Resource already exists", err))
+			ctx.Error(NewError(http.StatusConflict, constants.ErrCodeUserAlreadyExists, "resource already exists", err))
 		case "23503": // foreign_key_violation
-			ctx.Error(NewError(http.StatusBadRequest, "Invalid reference, foreign key constraint failed", err))
+			ctx.Error(NewError(http.StatusBadRequest, constants.ErrCodeInvalidRequest, "invalid reference, foreign key constraint failed", err))
 		case "23502": // not_null_violation
-			ctx.Error(NewError(http.StatusBadRequest, "Required field missing", err))
+			ctx.Error(NewError(http.StatusBadRequest, constants.ErrCodeInvalidRequest, "required field missing", err))
 		case "23514": // check_violation
-			ctx.Error(NewError(http.StatusBadRequest, "Check constraint failed", err))
+			ctx.Error(NewError(http.StatusBadRequest, constants.ErrCodeInvalidRequest, "check constraint failed", err))
 		default:
-			ctx.Error(NewError(http.StatusInternalServerError, "Database error", err))
+			ctx.Error(NewError(http.StatusInternalServerError, constants.ErrCodeInternalServer, "database error", err))
 		}
 		return
 	}
