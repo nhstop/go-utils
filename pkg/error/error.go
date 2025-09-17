@@ -14,26 +14,37 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// Error wraps an error with an HTTP status, application code, and message
-type Error struct {
-	HTTPCode int    `json:"-"`
-	AppCode  int    `json:"code"`
-	Message  string `json:"message"`
-	Err      error  `json:"-"`
+// -------------------------
+// CodedError & Constructor
+// -------------------------
+
+type CodedError struct {
+	HTTPCode int    // HTTP status code
+	Code     int    // Application error code
+	Message  string // Human-readable message
+	Err      error  // Underlying error
 }
 
-func (e *Error) Error() string {
-	if e.Err != nil {
-		return fmt.Sprintf("%s (code: %d) -> %v", e.Message, e.AppCode, e.Err)
+func (c *CodedError) Error() string {
+	if c.Err != nil {
+		return fmt.Sprintf("%s (code: %d, http: %d) -> %v", c.Message, c.Code, c.HTTPCode, c.Err)
 	}
-	return fmt.Sprintf("%s (code: %d)", e.Message, e.AppCode)
+	return fmt.Sprintf("%s (code: %d, http: %d)", c.Message, c.Code, c.HTTPCode)
 }
 
-// NewError creates a new Error from params
-func NewError(params Error) *Error {
-	e := &Error{
+// Optional parameters struct for NewError
+type ErrorParams struct {
+	HTTPCode int
+	Code     int
+	Message  string
+	Err      error
+}
+
+// NewError creates a new CodedError with defaults and optional overrides
+func NewError(params ErrorParams) *CodedError {
+	e := &CodedError{
 		HTTPCode: http.StatusInternalServerError,
-		AppCode:  constants.ErrCodeInternalServer,
+		Code:     constants.ErrCodeInternalServer,
 		Message:  "internal server error",
 		Err:      nil,
 	}
@@ -41,8 +52,8 @@ func NewError(params Error) *Error {
 	if params.HTTPCode != 0 {
 		e.HTTPCode = params.HTTPCode
 	}
-	if params.AppCode != 0 {
-		e.AppCode = params.AppCode
+	if params.Code != 0 {
+		e.Code = params.Code
 	}
 	if params.Message != "" {
 		e.Message = params.Message
@@ -58,13 +69,13 @@ func NewError(params Error) *Error {
 // Error Handlers
 // -------------------------
 
-// BadRequest handles 400 - Bad Request consistently.
+// BadRequest handles 400 - Bad Request consistently
 func BadRequest(ctx *gin.Context, err error) {
 	// Case 1: Empty body
 	if errors.Is(err, io.EOF) {
-		ctx.Error(NewError(Error{
+		ctx.Error(NewError(ErrorParams{
 			HTTPCode: http.StatusBadRequest,
-			AppCode:  constants.ErrCodeInvalidRequest,
+			Code:     constants.ErrCodeInvalidRequest,
 			Message:  "request body is required but was empty",
 			Err:      err,
 		}))
@@ -95,9 +106,9 @@ func BadRequest(ctx *gin.Context, err error) {
 			errorsMap[strings.ToLower(fieldErr.Field())] = msg
 		}
 
-		ctx.Error(NewError(Error{
+		ctx.Error(NewError(ErrorParams{
 			HTTPCode: http.StatusBadRequest,
-			AppCode:  constants.ErrCodeInvalidRequest,
+			Code:     constants.ErrCodeInvalidRequest,
 			Message:  formatValidationErrors(errorsMap),
 			Err:      err,
 		}))
@@ -105,15 +116,15 @@ func BadRequest(ctx *gin.Context, err error) {
 	}
 
 	// Case 3: Other JSON/binding errors
-	ctx.Error(NewError(Error{
+	ctx.Error(NewError(ErrorParams{
 		HTTPCode: http.StatusBadRequest,
-		AppCode:  constants.ErrCodeInvalidRequest,
+		Code:     constants.ErrCodeInvalidRequest,
 		Message:  "invalid request body",
 		Err:      err,
 	}))
 }
 
-// Helper to convert validation errors map to string
+// Helper to format validation errors map
 func formatValidationErrors(errorsMap map[string]string) string {
 	parts := make([]string, 0, len(errorsMap))
 	for field, msg := range errorsMap {
@@ -122,37 +133,37 @@ func formatValidationErrors(errorsMap map[string]string) string {
 	return strings.Join(parts, "; ")
 }
 
-// InternalServerError handles 500 - Internal Server Error
+// InternalServerError handles 500 errors
 func InternalServerError(ctx *gin.Context, err error) {
 	msg := "internal server error"
 	if err != nil && err.Error() != "" {
 		msg = err.Error()
 	}
 
-	ctx.Error(NewError(Error{
+	ctx.Error(NewError(ErrorParams{
 		HTTPCode: http.StatusInternalServerError,
-		AppCode:  constants.ErrCodeInternalServer,
+		Code:     constants.ErrCodeInternalServer,
 		Message:  msg,
 		Err:      err,
 	}))
 }
 
-// NotFound handles 404 - Not Found
+// NotFound handles 404 errors
 func NotFound(ctx *gin.Context, msg string) {
-	ctx.Error(NewError(Error{
+	ctx.Error(NewError(ErrorParams{
 		HTTPCode: http.StatusNotFound,
-		AppCode:  constants.ErrCodeUserNotFound,
+		Code:     constants.ErrCodeUserNotFound,
 		Message:  msg,
 	}))
 }
 
-// PostgresError maps pg errors into AppError with proper codes
+// PostgresError maps PostgreSQL errors into CodedError
 func PostgresError(ctx *gin.Context, err error) {
 	// Handle sql.ErrNoRows
 	if errors.Is(err, sql.ErrNoRows) {
-		ctx.Error(NewError(Error{
+		ctx.Error(NewError(ErrorParams{
 			HTTPCode: http.StatusNotFound,
-			AppCode:  constants.ErrCodeUserNotFound,
+			Code:     constants.ErrCodeUserNotFound,
 			Message:  "resource not found",
 			Err:      err,
 		}))
@@ -163,37 +174,37 @@ func PostgresError(ctx *gin.Context, err error) {
 	if errors.As(err, &pgErr) {
 		switch pgErr.Code {
 		case "23505": // unique_violation
-			ctx.Error(NewError(Error{
+			ctx.Error(NewError(ErrorParams{
 				HTTPCode: http.StatusConflict,
-				AppCode:  constants.ErrCodeUserAlreadyExists,
+				Code:     constants.ErrCodeUserAlreadyExists,
 				Message:  "resource already exists",
 				Err:      err,
 			}))
 		case "23503": // foreign_key_violation
-			ctx.Error(NewError(Error{
+			ctx.Error(NewError(ErrorParams{
 				HTTPCode: http.StatusBadRequest,
-				AppCode:  constants.ErrCodeInvalidRequest,
+				Code:     constants.ErrCodeInvalidRequest,
 				Message:  "invalid reference, foreign key constraint failed",
 				Err:      err,
 			}))
 		case "23502": // not_null_violation
-			ctx.Error(NewError(Error{
+			ctx.Error(NewError(ErrorParams{
 				HTTPCode: http.StatusBadRequest,
-				AppCode:  constants.ErrCodeInvalidRequest,
+				Code:     constants.ErrCodeInvalidRequest,
 				Message:  "required field missing",
 				Err:      err,
 			}))
 		case "23514": // check_violation
-			ctx.Error(NewError(Error{
+			ctx.Error(NewError(ErrorParams{
 				HTTPCode: http.StatusBadRequest,
-				AppCode:  constants.ErrCodeInvalidRequest,
+				Code:     constants.ErrCodeInvalidRequest,
 				Message:  "check constraint failed",
 				Err:      err,
 			}))
 		default:
-			ctx.Error(NewError(Error{
+			ctx.Error(NewError(ErrorParams{
 				HTTPCode: http.StatusInternalServerError,
-				AppCode:  constants.ErrCodeInternalServer,
+				Code:     constants.ErrCodeInternalServer,
 				Message:  "database error",
 				Err:      err,
 			}))
