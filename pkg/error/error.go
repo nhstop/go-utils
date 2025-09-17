@@ -73,7 +73,6 @@ func InternalServerError(err error) *CodedError {
 
 	return NewError(ErrorParams{
 		HTTPCode: http.StatusInternalServerError,
-		Code:     constants.InternalServer,
 		Message:  msg,
 		Err:      err,
 	})
@@ -83,7 +82,6 @@ func InternalServerError(err error) *CodedError {
 func NotFound(msg string) *CodedError {
 	return NewError(ErrorParams{
 		HTTPCode: http.StatusNotFound,
-		Code:     constants.UserNotFound,
 		Message:  msg,
 	})
 }
