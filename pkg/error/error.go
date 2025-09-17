@@ -109,10 +109,15 @@ func formatValidationErrors(errorsMap map[string]string) string {
 
 // InternalServerError handles 500 - Internal Server Error
 func InternalServerError(ctx *gin.Context, err error) {
+	msg := "internal server error"
+	if err != nil && err.Error() != "" {
+		msg = err.Error()
+	}
+
 	ctx.Error(NewError(
 		http.StatusInternalServerError,
 		constants.ErrCodeInternalServer,
-		"internal server error",
+		msg,
 		err,
 	))
 }

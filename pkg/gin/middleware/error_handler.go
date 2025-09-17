@@ -20,11 +20,13 @@ func ErrorHandler() gin.HandlerFunc {
 			// Default response
 			status := http.StatusInternalServerError
 			message := "Internal Server Error"
+			code := 0
 
 			// If it's an AppError, use its HTTPCode and message
 			if appErr, ok := lastErr.(*apperr.Error); ok {
 				status = appErr.HTTPCode // ✅ use HTTPCode
 				message = appErr.Message
+				code = appErr.Code
 			}
 
 			statusColor := constants.ColorGreen
@@ -46,6 +48,7 @@ func ErrorHandler() gin.HandlerFunc {
 			c.JSON(status, gin.H{
 				"success": false,
 				"message": message,
+				"code":    code,
 			})
 		}
 	}
