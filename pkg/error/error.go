@@ -65,13 +65,13 @@ func NewError(params ErrorParams) *CodedError {
 // Helper to format validation errors map
 
 // InternalServerError handles 500 errors
-func InternalServerError(err error) {
+func InternalServerError(err error) *CodedError {
 	msg := "internal server error"
 	if err != nil && err.Error() != "" {
 		msg = err.Error()
 	}
 
-	NewError(ErrorParams{
+	return NewError(ErrorParams{
 		HTTPCode: http.StatusInternalServerError,
 		Code:     constants.InternalServer,
 		Message:  msg,
@@ -80,8 +80,8 @@ func InternalServerError(err error) {
 }
 
 // NotFound handles 404 errors
-func NotFound(msg string) {
-	NewError(ErrorParams{
+func NotFound(msg string) *CodedError {
+	return NewError(ErrorParams{
 		HTTPCode: http.StatusNotFound,
 		Code:     constants.UserNotFound,
 		Message:  msg,
