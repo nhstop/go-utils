@@ -15,11 +15,10 @@ func PostgresError(err error) *CodedError {
 	if errors.Is(err, sql.ErrNoRows) {
 		return NewError(ErrorParams{
 			HTTPCode: http.StatusNotFound,
-			Code:     constants.UserNotFound,
+			Code:     constants.DBNotFound,
 			Message:  "resource not found",
 			Err:      err,
 		})
-
 	}
 
 	var pgErr *pgconn.PgError
@@ -28,14 +27,14 @@ func PostgresError(err error) *CodedError {
 		case "23505": // unique_violation
 			return NewError(ErrorParams{
 				HTTPCode: http.StatusConflict,
-				Code:     constants.UserAlreadyExists,
+				Code:     constants.DBUniqueViolation,
 				Message:  "resource already exists",
 				Err:      err,
 			})
 		case "23503": // foreign_key_violation
 			return NewError(ErrorParams{
 				HTTPCode: http.StatusBadRequest,
-				Code:     constants.InvalidRequest,
+				Code:     constants.DBForeignKeyViolation,
 				Message:  "invalid reference, foreign key constraint failed",
 				Err:      err,
 			})
@@ -53,22 +52,21 @@ func PostgresError(err error) *CodedError {
 				Message:  "check constraint failed",
 				Err:      err,
 			})
-		default:
+		default: // all other Postgres errors
 			return NewError(ErrorParams{
 				HTTPCode: http.StatusInternalServerError,
 				Code:     constants.DBError,
-				Message:  "Application  error",
+				Message:  "Application error",
 				Err:      err,
 			})
 		}
-
 	}
 
 	// Fallback for all other errors
 	return NewError(ErrorParams{
 		HTTPCode: http.StatusInternalServerError,
 		Code:     constants.InternalServer,
-		Message:  "database error",
+		Message:  "internal server error",
 		Err:      err,
 	})
 }

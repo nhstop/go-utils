@@ -3,6 +3,7 @@ package constants
 // Error codes (application-wide unique)
 const (
 	Empty = 0
+
 	// Generic
 	InternalServer = 1000
 	InvalidRequest = 1001
@@ -18,7 +19,12 @@ const (
 	FailedToGetAESKey = 2005
 
 	// Database
-	DBError = 3000
+	DBError               = 3000
+	DBUniqueViolation     = 3001
+	DBForeignKeyViolation = 3002
+	DBNotFound            = 3003
+	DBTimeout             = 3004
+	DBConnectionFailed    = 3005
 
 	// Business Logic
 	InvalidCredentials = 4000
