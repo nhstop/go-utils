@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/busnosh/go-utils/pkg/constants"
-	apperr "github.com/busnosh/go-utils/pkg/error"
-	"github.com/busnosh/go-utils/pkg/utils"
+	"github.com/nhstop/go-utils/pkg/constants"
+	apperr "github.com/nhstop/go-utils/pkg/error"
+	"github.com/nhstop/go-utils/pkg/utils"
 )
 
 func getAESKey(secretKey string) ([]byte, error) {

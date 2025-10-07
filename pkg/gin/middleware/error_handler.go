@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/busnosh/go-utils/pkg/constants"
-	apperr "github.com/busnosh/go-utils/pkg/error"
-	"github.com/busnosh/go-utils/pkg/logger"
 	"github.com/gin-gonic/gin"
+	"github.com/nhstop/go-utils/pkg/constants"
+	apperr "github.com/nhstop/go-utils/pkg/error"
+	"github.com/nhstop/go-utils/pkg/logger"
 )
 
 // ErrorHandler logs errors and returns a structured JSON response

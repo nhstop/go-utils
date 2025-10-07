@@ -5,8 +5,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/busnosh/go-utils/pkg/constants"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/nhstop/go-utils/pkg/constants"
 )
 
 // PostgresError maps PostgreSQL errors into CodedError

@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/busnosh/go-utils/pkg/logger"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nhstop/go-utils/pkg/logger"
 )
 
 func Connect(databaseURL string) *pgxpool.Pool {

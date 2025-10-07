@@ -1,4 +1,4 @@
-module github.com/busnosh/go-utils
+module github.com/nhstop/go-utils
 
 go 1.23.0
 

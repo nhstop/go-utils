@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"strconv"
 
-	"github.com/busnosh/go-utils/pkg/utils"
+	"github.com/nhstop/go-utils/pkg/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 

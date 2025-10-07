@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/busnosh/go-utils/pkg/constants"
+	"github.com/nhstop/go-utils/pkg/constants"
 )
 
 // -------------------------

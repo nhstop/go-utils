@@ -3,9 +3,9 @@ package middleware
 import (
 	"time"
 
-	"github.com/busnosh/go-utils/pkg/constants"
-	"github.com/busnosh/go-utils/pkg/logger"
 	"github.com/gin-gonic/gin"
+	"github.com/nhstop/go-utils/pkg/constants"
+	"github.com/nhstop/go-utils/pkg/logger"
 )
 
 func RequestLogger() gin.HandlerFunc {
