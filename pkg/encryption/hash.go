@@ -29,6 +29,9 @@ func ComparePassword(hashedPassword, password string) error {
 }
 
 func HashText(value string, secretKey string) string {
+	if value == "" {
+		return ""
+	}
 	secret := utils.GetEnv(secretKey, "HASH_SECRET")
 	h := hmac.New(sha256.New, []byte(secret))
 	h.Write([]byte(value))

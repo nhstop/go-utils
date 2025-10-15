@@ -21,6 +21,11 @@ func getAESKey(secretKey string) ([]byte, error) {
 }
 
 func Encrypt(plaintext string, secretKey string) ([]byte, error) {
+	// 🧩 If plaintext is empty, skip encryption and return nil
+	if len(plaintext) == 0 {
+		return nil, nil
+	}
+
 	key, err := getAESKey(secretKey)
 	if err != nil {
 		return nil, err
@@ -42,8 +47,7 @@ func Encrypt(plaintext string, secretKey string) ([]byte, error) {
 	}
 
 	ciphertext := aesGCM.Seal(nil, nonce, []byte(plaintext), nil)
-	final := append(nonce, ciphertext...)
-	return final, nil
+	return append(nonce, ciphertext...), nil
 }
 
 func Decrypt(data []byte, secretKey string) (string, error) {
