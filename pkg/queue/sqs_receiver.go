@@ -38,8 +38,6 @@ func ReceiveMessages(ctx context.Context, client *sqs.Client, queueURL string, c
 		cfg = DefaultReceiveConfig()
 	}
 
-	fmt.Println("👂 Listening for messages on queue:", queueURL)
-
 	for {
 		output, err := client.ReceiveMessage(ctx, &sqs.ReceiveMessageInput{
 			QueueUrl:            aws.String(queueURL),
