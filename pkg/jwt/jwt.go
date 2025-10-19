@@ -8,6 +8,10 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+var (
+	SigningMethodRS256 = jwt.SigningMethodRS256
+)
+
 // CustomClaims defines a generic JWT payload
 type CustomClaims struct {
 	Payload map[string]interface{}
