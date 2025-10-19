@@ -4,23 +4,15 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"strconv"
 
-	"github.com/nhstop/go-utils/pkg/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func GetBcryptCost(secretKey string) int {
-	cost := utils.GetEnv(secretKey, "BCRYPT_COST")
-	num, err := strconv.Atoi(cost)
-	if err != nil {
-		return bcrypt.DefaultCost
+func Hashpassword(password string, secret int) string {
+	if password == "" {
+		return ""
 	}
-	return num
-}
-
-func Hashpassword(Password string, secretKey string) string {
-	hashed, _ := bcrypt.GenerateFromPassword([]byte(Password), GetBcryptCost(secretKey))
+	hashed, _ := bcrypt.GenerateFromPassword([]byte(password), secret)
 	return string(hashed)
 }
 
@@ -28,11 +20,10 @@ func ComparePassword(hashedPassword, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }
 
-func HashText(value string, secretKey string) string {
+func HashText(value string, secret string) string {
 	if value == "" {
 		return ""
 	}
-	secret := utils.GetEnv(secretKey, "HASH_SECRET")
 	h := hmac.New(sha256.New, []byte(secret))
 	h.Write([]byte(value))
 	return hex.EncodeToString(h.Sum(nil))

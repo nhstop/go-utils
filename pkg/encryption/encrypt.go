@@ -6,32 +6,15 @@ import (
 	"crypto/rand"
 	"fmt"
 	"io"
-
-	"github.com/nhstop/go-utils/pkg/constants"
-	apperr "github.com/nhstop/go-utils/pkg/error"
-	"github.com/nhstop/go-utils/pkg/utils"
 )
 
-func getAESKey(secretKey string) ([]byte, error) {
-	key := utils.GetEnv(secretKey, "ENCRYPT_SECRET")
-	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
-		return nil, apperr.NewError(apperr.ErrorParams{Code: constants.FailedToGetAESKey, Message: "ENCRYPT_SECRET must be 16, 24, or 32 bytes"})
-	}
-	return []byte(key), nil
-}
-
-func Encrypt(plaintext string, secretKey string) ([]byte, error) {
+func Encrypt(plaintext string, secret []byte) ([]byte, error) {
 	// 🧩 If plaintext is empty, skip encryption and return nil
 	if len(plaintext) == 0 {
 		return nil, nil
 	}
 
-	key, err := getAESKey(secretKey)
-	if err != nil {
-		return nil, err
-	}
-
-	block, err := aes.NewCipher(key)
+	block, err := aes.NewCipher(secret)
 	if err != nil {
 		return nil, err
 	}
@@ -50,13 +33,9 @@ func Encrypt(plaintext string, secretKey string) ([]byte, error) {
 	return append(nonce, ciphertext...), nil
 }
 
-func Decrypt(data []byte, secretKey string) (string, error) {
-	key, err := getAESKey(secretKey)
-	if err != nil {
-		return "", err
-	}
+func Decrypt(data []byte, secret []byte) (string, error) {
 
-	block, err := aes.NewCipher(key)
+	block, err := aes.NewCipher(secret)
 	if err != nil {
 		return "", err
 	}
