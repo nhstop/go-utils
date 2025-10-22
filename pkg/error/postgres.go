@@ -16,7 +16,7 @@ func PostgresError(err error) *CodedError {
 		return NewError(ErrorParams{
 			HTTPCode: http.StatusNotFound,
 			Code:     constants.DBNotFound,
-			Message:  "resource not found",
+			Message:  "Resource not found",
 			Err:      err,
 		})
 	}
@@ -28,28 +28,28 @@ func PostgresError(err error) *CodedError {
 			return NewError(ErrorParams{
 				HTTPCode: http.StatusConflict,
 				Code:     constants.DBUniqueViolation,
-				Message:  "resource already exists",
+				Message:  "Resource already exists",
 				Err:      err,
 			})
 		case "23503": // foreign_key_violation
 			return NewError(ErrorParams{
 				HTTPCode: http.StatusBadRequest,
 				Code:     constants.DBForeignKeyViolation,
-				Message:  "invalid reference, foreign key constraint failed",
+				Message:  "Invalid reference, foreign key constraint failed",
 				Err:      err,
 			})
 		case "23502": // not_null_violation
 			return NewError(ErrorParams{
 				HTTPCode: http.StatusBadRequest,
 				Code:     constants.InvalidRequest,
-				Message:  "required field missing",
+				Message:  "Required field missing",
 				Err:      err,
 			})
 		case "23514": // check_violation
 			return NewError(ErrorParams{
 				HTTPCode: http.StatusBadRequest,
 				Code:     constants.InvalidRequest,
-				Message:  "check constraint failed",
+				Message:  "Check constraint failed",
 				Err:      err,
 			})
 		default: // all other Postgres errors
@@ -66,7 +66,7 @@ func PostgresError(err error) *CodedError {
 	return NewError(ErrorParams{
 		HTTPCode: http.StatusInternalServerError,
 		Code:     constants.InternalServer,
-		Message:  "internal server error",
+		Message:  "Internal server error",
 		Err:      err,
 	})
 }
